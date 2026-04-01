@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Job, TabType } from '@/types';
 import JobList from '@/components/jobs/JobList';
-import FilterBar from '@/components/jobs/FilterBar';
+import FilterBar, { JobFilters } from '@/components/jobs/FilterBar';
 import RightPanel from '@/components/layout/RightPanel';
 
 export default function JobsClient() {
@@ -13,18 +13,21 @@ export default function JobsClient() {
   const [tab, setTab] = useState<TabType>('recommended');
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
-  const [location, setLocation] = useState('United States');
-  const [activeFilters, setActiveFilters] = useState<Array<{ key: string; label: string }>>([
-    { key: 'pm', label: 'Product Manager' },
-    { key: 'entry', label: 'Entry Level' },
-    { key: 'ft', label: 'Full-time' },
-  ]);
+  const [location] = useState('United States');
+  const [filters, setFilters] = useState<JobFilters>({
+    locations: [],
+    jobFunctions: [],
+    experienceLevels: [],
+    jobTypes: [],
+    workModels: [],
+  });
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
     try {
+      const searchQuery = query || filters.jobFunctions[0] || 'Software Engineer';
       const params = new URLSearchParams({
-        q: query || 'Product Manager',
+        q: searchQuery,
         location,
       });
       const res = await fetch(`/api/jobs?${params}`);
@@ -35,11 +38,33 @@ export default function JobsClient() {
     } finally {
       setLoading(false);
     }
-  }, [query, location]);
+  }, [query, location, filters.jobFunctions]);
 
   useEffect(() => {
     fetchJobs();
   }, [fetchJobs]);
+
+  // Apply client-side filters (job functions drive the search query, not client filter)
+  const filteredJobs = useMemo(() => {
+    return jobs.filter((job) => {
+      if (filters.experienceLevels.length > 0 && !filters.experienceLevels.includes(job.experienceLevel)) {
+        return false;
+      }
+      if (filters.jobTypes.length > 0 && !filters.jobTypes.includes(job.jobType)) {
+        return false;
+      }
+      if (filters.workModels.length > 0 && !filters.workModels.includes(job.workModel)) {
+        return false;
+      }
+      if (filters.locations.length > 0) {
+        const jobLoc = job.location.toLowerCase();
+        const matchesLocation = filters.locations.some((l) => jobLoc.includes(l.toLowerCase()));
+        if (!matchesLocation) return false;
+      }
+      // Job functions are used as the search query, not as a client-side filter
+      return true;
+    });
+  }, [jobs, filters]);
 
   const handleLike = (jobId: string) => {
     const job = jobs.find((j) => j.id === jobId);
@@ -63,11 +88,8 @@ export default function JobsClient() {
     }
   };
 
-  const handleRemoveFilter = (key: string) => {
-    setActiveFilters((prev) => prev.filter((f) => f.key !== key));
-  };
-
-  const displayJobs = tab === 'liked' ? likedJobs : jobs;
+  // Show filtered jobs for recommended, all liked jobs for liked tab
+  const displayJobs = tab === 'liked' ? likedJobs : tab === 'recommended' ? filteredJobs : [];
 
   return (
     <div className="flex min-h-screen overflow-hidden">
@@ -128,11 +150,7 @@ export default function JobsClient() {
         </div>
 
         {/* Filter bar */}
-        <FilterBar
-          activeFilters={activeFilters}
-          onRemoveFilter={handleRemoveFilter}
-          onClearAll={() => setActiveFilters([])}
-        />
+        <FilterBar filters={filters} onFiltersChange={setFilters} />
 
         {/* Job list */}
         <div className="px-6 py-4">
