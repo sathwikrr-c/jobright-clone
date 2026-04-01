@@ -31,10 +31,10 @@ export default function JobsClient() {
         (filters.jobFunctions.length > 0
           ? filters.jobFunctions.join(' OR ')
           : 'Technical Program Manager');
-      // Use selected locations or default
+      // Use first selected location for API search (JSearch works best with one location)
       const searchLocation =
         filters.locations.length > 0
-          ? filters.locations.join(', ')
+          ? filters.locations[0]
           : location;
       const params = new URLSearchParams({
         q: searchQuery,
