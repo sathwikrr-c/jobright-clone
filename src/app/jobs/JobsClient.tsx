@@ -25,7 +25,12 @@ export default function JobsClient() {
   const fetchJobs = useCallback(async () => {
     setLoading(true);
     try {
-      const searchQuery = query || filters.jobFunctions[0] || 'Software Engineer';
+      // If user typed a search query, use that. Otherwise use all selected job functions.
+      const searchQuery =
+        query ||
+        (filters.jobFunctions.length > 0
+          ? filters.jobFunctions.join(' OR ')
+          : 'Software Engineer');
       const params = new URLSearchParams({
         q: searchQuery,
         location,

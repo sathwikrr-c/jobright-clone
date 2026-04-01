@@ -136,13 +136,16 @@ export async function searchJobs(
 ): Promise<Job[]> {
   if (!JSEARCH_API_KEY) {
     // Fall back to mock data, optionally filtered
-    const q = query.toLowerCase();
-    return mockJobs.filter(
-      (job) =>
-        job.title.toLowerCase().includes(q) ||
-        job.company.toLowerCase().includes(q) ||
-        job.description.toLowerCase().includes(q)
-    );
+    // Support "OR" queries: "Product Manager OR Program Manager"
+    const terms = query.toLowerCase().split(/\s+or\s+/i).map((t) => t.trim());
+    return mockJobs.filter((job) => {
+      const searchable = `${job.title} ${job.company} ${job.description}`.toLowerCase();
+      return terms.some((term) => {
+        // Split on whitespace and slashes, match if all words appear in searchable text
+        const words = term.split(/[\s/]+/).filter(Boolean);
+        return words.every((word) => searchable.includes(word));
+      });
+    });
   }
 
   const params = new URLSearchParams({
