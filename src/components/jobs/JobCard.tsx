@@ -57,7 +57,11 @@ function formatSalary(min?: number, max?: number): string | null {
 }
 
 function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  // If already a relative string like "3 hours ago", return as-is
+  if (dateStr.includes('ago') || dateStr.includes('Just now')) return dateStr;
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  const diff = Date.now() - date.getTime();
   const hours = Math.floor(diff / 3600000);
   if (hours < 1) return 'Just now';
   if (hours < 24) return `${hours}h ago`;

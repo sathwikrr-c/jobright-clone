@@ -70,8 +70,8 @@ export default function JobsPage() {
   const displayJobs = tab === 'liked' ? likedJobs : jobs;
 
   return (
-    <div className="flex min-h-screen">
-      <div className="flex-1 max-w-4xl">
+    <div className="flex min-h-screen overflow-hidden">
+      <div className="flex-1 min-w-0 overflow-y-auto">
         {/* Top navigation tabs */}
         <div className="sticky top-0 bg-white z-10 border-b border-gray-200">
           <div className="flex items-center px-6 pt-4">
@@ -152,8 +152,8 @@ export default function JobsPage() {
         </div>
       </div>
 
-      {/* Right panel */}
-      <div className="w-72 flex-shrink-0">
+      {/* Right panel — hidden below xl */}
+      <div className="hidden xl:block w-72 flex-shrink-0 border-l border-gray-200">
         <RightPanel />
       </div>
     </div>
