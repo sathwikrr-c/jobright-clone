@@ -148,8 +148,14 @@ export async function searchJobs(
     });
   }
 
+  // Clean up OR queries: use quoted terms for better title matching
+  const cleanQuery = query
+    .split(/\s+OR\s+/i)
+    .map((term) => `"${term.trim()}"`)
+    .join(' OR ');
+
   const params = new URLSearchParams({
-    query: `${query} in ${location}`,
+    query: `${cleanQuery} in ${location}`,
     page: String(page),
     num_pages: '3',
   });

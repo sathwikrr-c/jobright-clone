@@ -16,7 +16,7 @@ export default function JobsClient() {
   const [location] = useState('United States');
   const [filters, setFilters] = useState<JobFilters>({
     locations: ['San Francisco, CA', 'Bay Area, CA', 'Los Angeles, CA', 'Seattle, WA', 'New York, NY'],
-    jobFunctions: ['Project/Program Manager', 'Technical Project Manager'],
+    jobFunctions: ['Technical Program Manager', 'Program Manager'],
     experienceLevels: ['mid'],
     jobTypes: ['fulltime'],
     workModels: [],
