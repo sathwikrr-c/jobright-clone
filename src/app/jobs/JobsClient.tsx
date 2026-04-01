@@ -15,10 +15,10 @@ export default function JobsClient() {
   const [query, setQuery] = useState('');
   const [location] = useState('United States');
   const [filters, setFilters] = useState<JobFilters>({
-    locations: [],
-    jobFunctions: [],
-    experienceLevels: [],
-    jobTypes: [],
+    locations: ['San Francisco, CA', 'Bay Area, CA', 'Los Angeles, CA', 'Seattle, WA', 'New York, NY'],
+    jobFunctions: ['Project/Program Manager', 'Technical Project Manager'],
+    experienceLevels: ['mid'],
+    jobTypes: ['fulltime'],
     workModels: [],
   });
 
@@ -30,10 +30,15 @@ export default function JobsClient() {
         query ||
         (filters.jobFunctions.length > 0
           ? filters.jobFunctions.join(' OR ')
-          : 'Software Engineer');
+          : 'Technical Program Manager');
+      // Use selected locations or default
+      const searchLocation =
+        filters.locations.length > 0
+          ? filters.locations.join(', ')
+          : location;
       const params = new URLSearchParams({
         q: searchQuery,
-        location,
+        location: searchLocation,
       });
       const res = await fetch(`/api/jobs?${params}`);
       const data = await res.json();
@@ -43,13 +48,14 @@ export default function JobsClient() {
     } finally {
       setLoading(false);
     }
-  }, [query, location, filters.jobFunctions]);
+  }, [query, location, filters.jobFunctions, filters.locations]);
 
   useEffect(() => {
     fetchJobs();
   }, [fetchJobs]);
 
-  // Apply client-side filters (job functions drive the search query, not client filter)
+  // Apply client-side filters
+  // Location and job functions drive the API search query, so only filter by other criteria here
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
       if (filters.experienceLevels.length > 0 && !filters.experienceLevels.includes(job.experienceLevel)) {
@@ -61,12 +67,6 @@ export default function JobsClient() {
       if (filters.workModels.length > 0 && !filters.workModels.includes(job.workModel)) {
         return false;
       }
-      if (filters.locations.length > 0) {
-        const jobLoc = job.location.toLowerCase();
-        const matchesLocation = filters.locations.some((l) => jobLoc.includes(l.toLowerCase()));
-        if (!matchesLocation) return false;
-      }
-      // Job functions are used as the search query, not as a client-side filter
       return true;
     });
   }, [jobs, filters]);
