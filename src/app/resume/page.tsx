@@ -2,6 +2,19 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Upload, FileText, Sparkles, Copy, Check } from 'lucide-react';
+async function extractPdfText(file: File): Promise<string> {
+  const pdfjsLib = await import('pdfjs-dist');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pages: string[] = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    pages.push(content.items.map((item) => ('str' in item ? item.str : '')).join(' '));
+  }
+  return pages.join('\n\n');
+}
 
 export default function ResumePage() {
   const [resumeText, setResumeText] = useState('');
@@ -23,13 +36,18 @@ export default function ResumePage() {
     if (!file) return;
     setFileName(file.name);
 
-    if (file.type === 'text/plain') {
-      const text = await file.text();
+    try {
+      let text: string;
+      if (file.type === 'application/pdf') {
+        text = await extractPdfText(file);
+      } else {
+        text = await file.text();
+      }
       setResumeText(text);
       localStorage.setItem('resumeText', text);
-    } else {
-      // For PDF, we'd use a PDF parser — for now, prompt user to paste text
-      alert('PDF upload detected. For best results, please paste your resume text below.');
+    } catch (err) {
+      console.error('Failed to parse file:', err);
+      alert('Failed to parse file. Please paste your resume text manually.');
     }
   };
 
@@ -78,6 +96,16 @@ export default function ResumePage() {
             {/* Upload area */}
             <div
               onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                  const fakeEvent = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>;
+                  handleFileUpload(fakeEvent);
+                }
+              }}
               className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-emerald-500 transition-colors mb-4"
             >
               <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
