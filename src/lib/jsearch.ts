@@ -151,7 +151,7 @@ export async function searchJobs(
   const params = new URLSearchParams({
     query: `${query} in ${location}`,
     page: String(page),
-    num_pages: '1',
+    num_pages: '3',
   });
 
   const mappedDate = mapDatePosted(datePosted);
@@ -179,7 +179,11 @@ export async function searchJobs(
       return mockJobs;
     }
 
-    return data.data.map(mapJSearchJobToJob);
+    const apiJobs = data.data.map(mapJSearchJobToJob);
+    // Combine API results with mock data for a fuller experience
+    const apiJobIds = new Set(apiJobs.map((j) => j.id));
+    const extraMockJobs = mockJobs.filter((j) => !apiJobIds.has(j.id));
+    return [...apiJobs, ...extraMockJobs];
   } catch (error) {
     console.error('JSearch API request failed:', error);
     return mockJobs;
